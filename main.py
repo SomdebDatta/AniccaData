@@ -1,6 +1,6 @@
 import pandas as pd
 import uvicorn
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from utility.constants import Constants
@@ -16,26 +16,31 @@ app = FastAPI(debug=True)
 
 
 @app.get("/get_all_id")
-def get_all_id():
+def get_all_id() -> dict:
+    """
+    This endpoint is just to check how many entries are there in the dataset and,
+    what are the IDs.
+    """
     global data
     my_list = list(data.car_ID)
 
     response = {"All_IDS": my_list}
 
-    print(data.tail())
-
     return JSONResponse(content=response, status_code=200)
 
 
 @app.post("/insert_car_entry")
-def insert_data(msg: dict):
+def insert_data(msg: dict) -> dict:
+    """
+    This post endpoint is used to insert data.
+    First the JSON body is validated and then the dataset is updated.
+    """
     Insert(**msg)
     global data
     new_dict = {key: [value] for key, value in msg.items()}
     new_entry = pd.DataFrame.from_dict(new_dict)
-    print(new_entry)
+
     data = pd.concat([data, new_entry], axis=0, ignore_index=True)
-    print(data.tail())
 
     response = {"Message": "New Entry Data validated and inserted succesfully!"}
 
@@ -43,7 +48,11 @@ def insert_data(msg: dict):
 
 
 @app.delete("/remove_entry/{car_ID}")
-def remove_entry(car_ID: int):
+def remove_entry(car_ID: int) -> dict:
+    """
+    This delete endpoint can be used to delete an entry from the dataset using the Car ID.
+    It also checks for invalid ID passed.
+    """
     global data
 
     index = data.index[data["car_ID"] == car_ID]
@@ -52,9 +61,7 @@ def remove_entry(car_ID: int):
         response = {"Message": f"Car ID - {car_ID} not found."}
         return JSONResponse(content=response, status_code=401)
     else:
-        print(data.iloc[index])
         data.drop([index.values[0]], inplace=True)
-        print(data.tail())
 
         response = {"Message": f"Entry with Car ID - {car_ID} has been deleted."}
 
@@ -62,7 +69,12 @@ def remove_entry(car_ID: int):
 
 
 @app.put("/update_entry/{car_ID}")
-def update_entry(car_ID: int, msg: dict):
+def update_entry(car_ID: int, msg: dict) -> dict:
+    """
+    This put endpoint can be used for updating an existing entry using the Car ID.
+    It checks whether the JSON body passed is valid or not.
+    It also checks for invalid ID passed.
+    """
     global data
 
     index = data.index[data["car_ID"] == car_ID]
@@ -71,7 +83,6 @@ def update_entry(car_ID: int, msg: dict):
         response = {"Message": f"Car ID - {car_ID} not found."}
         return JSONResponse(content=response, status_code=401)
 
-    print(data.columns)
     for key in msg:
         if key not in data.columns:
             response = {"Message": f"'{key}' not a valid column. Invalid input."}
