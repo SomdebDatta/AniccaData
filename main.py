@@ -42,7 +42,7 @@ def insert_data(msg: dict):
     return JSONResponse(content=response, status_code=200)
 
 
-@app.delete("/remove_entry")
+@app.delete("/remove_entry/{car_ID}")
 def remove_entry(car_ID: int):
     global data
 
@@ -59,6 +59,36 @@ def remove_entry(car_ID: int):
         response = {"Message": f"Entry with Car ID - {car_ID} has been deleted."}
 
         return JSONResponse(content=response, status_code=200)
+
+
+@app.put("/update_entry/{car_ID}")
+def update_entry(car_ID: int, msg: dict):
+    global data
+
+    index = data.index[data["car_ID"] == car_ID]
+
+    if index.empty:
+        response = {"Message": f"Car ID - {car_ID} not found."}
+        return JSONResponse(content=response, status_code=401)
+
+    print(data.columns)
+    for key in msg:
+        if key not in data.columns:
+            response = {"Message": f"'{key}' not a valid column. Invalid input."}
+            return JSONResponse(content=response, status_code=400)
+
+    print(f"Row before update: \n{data.iloc[index]}")
+
+    for key, value in msg.items():
+        data.loc[index, key] = value
+
+    print(f"Row after update: \n{data.iloc[index]}")
+
+    response = {
+        "Message": f"Entry with ID {car_ID} has been succesfully update with the data given."
+    }
+
+    return JSONResponse(content=response, status_code=200)
 
 
 if __name__ == "__main__":
